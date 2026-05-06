@@ -15,6 +15,7 @@ import { filter } from 'rxjs/operators';
         
         <div class="nav-links">
           <a routerLink="/events" routerLinkActive="active">Events</a>
+          <a *ngIf="authService.isLoggedIn()" routerLink="/my-tickets" routerLinkActive="active">My Tickets</a>
           <a *ngIf="authService.isLoggedIn()" routerLink="/scanner" routerLinkActive="active">Scanner</a>
           <a *ngIf="authService.isAdmin()" routerLink="/admin" routerLinkActive="active">Admin</a>
         </div>

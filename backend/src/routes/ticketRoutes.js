@@ -26,8 +26,8 @@ const createTicketRoutes = (io) => {
   // PUT /tickets/change-name/:ticketId - Change ticket owner name
   router.put('/change-name/:ticketId', auth(), (req, res) => TicketController.changeName(req, res));
 
-  // GET /tickets/my - Get current user's tickets
-  router.get('/my', auth(), (req, res) => TicketController.getMyTickets(req, res));
+  // GET /tickets/my-tickets - Get current user's tickets
+  router.get('/my-tickets', auth(), (req, res) => TicketController.getMyTickets(req, res));
 
   return router;
 };

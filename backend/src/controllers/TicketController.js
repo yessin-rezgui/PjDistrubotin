@@ -32,9 +32,9 @@ class TicketController {
 
   async getMyTickets(req, res) {
     try {
-      // Implementation for user to see their tickets
-      // ...
-      res.json({ success: true, tickets: [] });
+      const userId = req.user.id;
+      const tickets = await TicketService.getUserTickets(userId);
+      res.json({ success: true, data: tickets });
     } catch (err) {
       res.status(500).json({ success: false, message: err.message });
     }

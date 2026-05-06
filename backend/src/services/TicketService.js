@@ -174,6 +174,21 @@ class TicketService {
       client.release();
     }
   }
+
+  async getUserTickets(userId) {
+    const result = await db.query(`
+      SELECT 
+        t.id, t.status, t.qr_code as "qrCode", t.blockchain_hash as "hash", t.user_name as "ownerName",
+        s.seat_label as "seatLabel",
+        e.name as "concertName", e.artist, e.venue, e.start_time as "startTime"
+      FROM tickets t
+      JOIN seats s ON t.seat_id = s.id
+      JOIN events e ON s.event_id = e.id
+      WHERE t.user_id = $1
+      ORDER BY e.start_time DESC
+    `, [userId]);
+    return result.rows;
+  }
 }
 
 module.exports = new TicketService();

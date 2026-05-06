@@ -175,9 +175,15 @@ export class ConcertListComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.purchasedTicket = {
           ...res.data,
+          id: res.data.ticketId,
+          concertName: this.selectedConcert.name,
+          artist: this.selectedConcert.artist,
+          venue: this.selectedConcert.venue,
+          startTime: this.selectedConcert.start_time,
           status: 'VALID',
           seatLabel: this.selectedSeat.seat_label,
-          ownerName: this.authService.currentUserValue?.username
+          ownerName: this.authService.currentUserValue?.username,
+          hash: res.data.blockchainHash
         };
         this.buying = false;
       },

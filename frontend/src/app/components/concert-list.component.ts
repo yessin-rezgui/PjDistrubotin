@@ -60,7 +60,11 @@ import { TicketDetailsComponent } from './ticket-details/ticket-details.componen
         <h2>🎉 Congratulations!</h2>
         <p>Your ticket has been confirmed.</p>
         <app-ticket-details [ticket]="purchasedTicket"></app-ticket-details>
-        <button class="btn-back" (click)="reset()">Back to Events</button>
+        
+        <div class="success-actions">
+          <button class="btn-download" (click)="downloadTicket()">Download Ticket (QR)</button>
+          <button class="btn-back" (click)="reset()">Back to Events</button>
+        </div>
       </div>
     </div>
   `,
@@ -88,6 +92,8 @@ import { TicketDetailsComponent } from './ticket-details/ticket-details.componen
     .btn-buy { background: #10b981; color: white; border: none; padding: 1rem 2rem; border-radius: 0.5rem; font-weight: 700; cursor: pointer; }
     .error { color: #ef4444; margin-top: 1rem; }
     .btn-back { background: none; border: none; color: #6366f1; cursor: pointer; font-weight: 600; margin-bottom: 1rem; }
+    .success-actions { display: flex; flex-direction: column; gap: 1rem; align-items: center; margin-top: 2rem; }
+    .btn-download { background: #6366f1; color: white; border: none; padding: 1rem 2rem; border-radius: 0.5rem; font-weight: 700; cursor: pointer; width: 300px; }
   `]
 })
 export class ConcertListComponent implements OnInit, OnDestroy {
@@ -187,5 +193,16 @@ export class ConcertListComponent implements OnInit, OnDestroy {
     this.purchasedTicket = null;
     this.selectedSeat = null;
     this.loadConcerts();
+  }
+
+  downloadTicket() {
+    if (!this.purchasedTicket || !this.purchasedTicket.qrCode) return;
+    
+    const link = document.createElement('a');
+    link.href = this.purchasedTicket.qrCode;
+    link.download = `Ticket_${this.purchasedTicket.id}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

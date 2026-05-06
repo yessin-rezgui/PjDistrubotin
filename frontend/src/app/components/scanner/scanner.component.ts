@@ -29,6 +29,11 @@ import { environment } from '../../../environments/environment';
           </div>
         </div>
 
+        <!-- Toast Notification -->
+        <div class="toast" *ngIf="showToast" [class.success]="result?.success" [class.error]="!result?.success">
+          {{ result?.message }}
+        </div>
+
         <!-- Result Overlay -->
         <div class="result-overlay" *ngIf="result" [class.success]="result.success" [class.error]="!result.success">
           <div class="result-content">
@@ -105,6 +110,15 @@ import { environment } from '../../../environments/environment';
     }
     .result-content button:hover { transform: scale(1.05); }
 
+    .toast {
+      position: fixed; top: 20px; right: 20px; padding: 15px 30px; border-radius: 12px;
+      color: white; font-weight: 700; z-index: 2000; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+      animation: slideIn 0.3s ease-out;
+    }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   `]
 })
@@ -113,6 +127,7 @@ export class ScannerComponent implements OnInit, OnDestroy {
   validating = false;
   result: any = null;
   scanner: any = null;
+  showToast = false;
 
   constructor(private http: HttpClient) {}
 
@@ -157,15 +172,22 @@ export class ScannerComponent implements OnInit, OnDestroy {
     this.http.post<any>(`${environment.apiUrl}/tickets/validate`, { ticketId: id }).subscribe({
       next: (res) => {
         this.result = { success: true, message: res.message };
+        this.triggerToast();
         this.validating = false;
         if (this.scanner) this.scanner.pause();
       },
       error: (err) => {
         this.result = { success: false, message: err.error?.message || 'Invalid Ticket' };
+        this.triggerToast();
         this.validating = false;
         if (this.scanner) this.scanner.pause();
       }
     });
+  }
+
+  triggerToast() {
+    this.showToast = true;
+    setTimeout(() => this.showToast = false, 3000);
   }
 
   resetScanner() {

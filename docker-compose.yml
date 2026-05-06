@@ -1,0 +1,66 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: concert-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: SytemDS
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - concert-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d SytemDS"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Express Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: concert-backend
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://postgres:postgres@db:5432/SytemDS
+      JWT_SECRET: your_super_secret_jwt_key
+      NODE_ENV: development
+    ports:
+      - '3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - concert-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    command: npm run dev
+    restart: unless-stopped
+
+  # Angular Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: concert-frontend
+    ports:
+      - '4200:4200'
+    depends_on:
+      - backend
+    networks:
+      - concert-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  concert-network:
+    driver: bridge

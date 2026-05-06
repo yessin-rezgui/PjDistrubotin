@@ -1,0 +1,357 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  min-height: 100vh;
+  color: #fff;
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.5em;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+h2 {
+  font-size: 1.8em;
+  margin: 20px 0;
+  color: #00d4ff;
+}
+
+/* Messages */
+.message {
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  animation: slideIn 0.3s ease-in-out;
+}
+
+.message-success {
+  background-color: #4caf50;
+  border-left: 4px solid #45a049;
+}
+
+.message-error {
+  background-color: #f44336;
+  border-left: 4px solid #da190b;
+}
+
+.message-info {
+  background-color: #2196f3;
+  border-left: 4px solid #0b7dda;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2em;
+  color: #00d4ff;
+}
+
+/* Concert List */
+.concerts-section h2 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.concerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.concert-card {
+  background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.concert-card:hover {
+  transform: translateY(-10px);
+  border-color: #00d4ff;
+  box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2);
+}
+
+.concert-header {
+  margin-bottom: 15px;
+}
+
+.concert-header h3 {
+  font-size: 1.4em;
+  margin: 0 0 5px 0;
+  color: #00d4ff;
+}
+
+.concert-name {
+  font-size: 0.95em;
+  color: #a0a0a0;
+  margin: 0;
+}
+
+.concert-details {
+  font-size: 0.9em;
+  color: #b0b0b0;
+  line-height: 1.6;
+}
+
+.concert-details p {
+  margin: 5px 0;
+}
+
+.btn-select {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-select:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+}
+
+/* Seats Section */
+.seats-section {
+  background: rgba(15, 52, 96, 0.5);
+  padding: 30px;
+  border-radius: 12px;
+  border: 2px solid #00d4ff;
+}
+
+.back-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.btn-back {
+  padding: 10px 15px;
+  background-color: #f44336;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+  background-color: #da190b;
+  transform: scale(1.05);
+}
+
+.concert-info {
+  background: rgba(0, 212, 255, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #00d4ff;
+  margin-bottom: 20px;
+  font-size: 0.95em;
+}
+
+.concert-info p {
+  margin: 5px 0;
+}
+
+/* Seat Grid */
+.seats-grid {
+  margin: 30px 0;
+}
+
+.legend {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  font-size: 0.95em;
+}
+
+.seats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 100%;
+  margin-bottom: 20px;
+}
+
+.seat {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.2em;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.seat small {
+  font-size: 0.6em;
+  color: #fff;
+  margin-top: 2px;
+}
+
+.seat-available {
+  background-color: rgba(76, 175, 80, 0.3);
+  border-color: #4caf50;
+  cursor: pointer;
+}
+
+.seat-available:hover {
+  background-color: rgba(76, 175, 80, 0.6);
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.seat-sold {
+  background-color: rgba(244, 67, 54, 0.3);
+  border-color: #f44336;
+  cursor: not-allowed;
+}
+
+.seat-used {
+  background-color: rgba(156, 39, 176, 0.3);
+  border-color: #9c27f0;
+  cursor: not-allowed;
+}
+
+.seat-cancelled {
+  background-color: rgba(200, 200, 200, 0.3);
+  border-color: #c0c0c0;
+  cursor: not-allowed;
+}
+
+.seat-expired {
+  background-color: rgba(50, 50, 50, 0.3);
+  border-color: #333;
+  cursor: not-allowed;
+}
+
+/* Booking Form */
+.booking-form {
+  background: rgba(0, 212, 255, 0.1);
+  padding: 20px;
+  border-radius: 8px;
+  border: 2px solid #00d4ff;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selected-seat {
+  flex: 1;
+  min-width: 200px;
+}
+
+.selected-seat p {
+  margin: 0;
+  font-size: 1em;
+}
+
+.placeholder {
+  color: #a0a0a0;
+  font-style: italic;
+}
+
+.input-name {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px;
+  border: 2px solid #00d4ff;
+  border-radius: 6px;
+  background-color: rgba(0, 212, 255, 0.1);
+  color: #fff;
+  font-size: 1em;
+}
+
+.input-name::placeholder {
+  color: #a0a0a0;
+}
+
+.input-name:focus {
+  outline: none;
+  background-color: rgba(0, 212, 255, 0.2);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+}
+
+.btn-buy {
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 1em;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.btn-buy:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+}
+
+.btn-buy:disabled {
+  background: linear-gradient(135deg, #cccccc 0%, #aaaaaa 100%);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8em;
+  }
+
+  h2 {
+    font-size: 1.3em;
+  }
+
+  .concerts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-form {
+    flex-direction: column;
+  }
+
+  .seats-container {
+    grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+  }
+}

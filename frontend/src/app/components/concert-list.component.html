@@ -1,0 +1,93 @@
+<div class="container">
+  <h1>🎵 Concert Ticketing System</h1>
+
+  <!-- Message Display -->
+  <div *ngIf="message" [ngClass]="'message message-' + messageType">
+    {{ message }}
+  </div>
+
+  <!-- Concert List View -->
+  <div *ngIf="!selectedConcert" class="concerts-section">
+    <h2>Available Concerts</h2>
+
+    <div *ngIf="loading" class="loading">Loading concerts...</div>
+
+    <div class="concerts-grid">
+      <div *ngFor="let concert of concerts" class="concert-card" (click)="selectConcert(concert)">
+        <div class="concert-header">
+          <h3>🎤 {{ concert.artist }}</h3>
+          <p class="concert-name">{{ concert.name }}</p>
+        </div>
+        <div class="concert-details">
+          <p><strong>Venue:</strong> {{ concert.venue }}</p>
+          <p><strong>Start:</strong> {{ formatDate(concert.startTime) }}</p>
+          <p><strong>End:</strong> {{ formatDate(concert.endTime) }}</p>
+          <p><strong>Seats:</strong> {{ concert.totalSeats }}</p>
+        </div>
+        <button class="btn-select">Select Concert →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seat Selection View -->
+  <div *ngIf="selectedConcert" class="seats-section">
+    <div class="back-header">
+      <button (click)="goBack()" class="btn-back">← Back</button>
+      <h2>{{ selectedConcert.artist }} - {{ selectedConcert.name }}</h2>
+    </div>
+
+    <div class="concert-info">
+      <p><strong>Venue:</strong> {{ selectedConcert.venue }}</p>
+      <p><strong>Start:</strong> {{ formatDate(selectedConcert.startTime) }}</p>
+      <p><strong>End:</strong> {{ formatDate(selectedConcert.endTime) }}</p>
+    </div>
+
+    <!-- Seat Grid -->
+    <div class="seats-grid">
+      <div class="legend">
+        <span>🟢 Available</span>
+        <span>🔴 Sold</span>
+        <span>🟣 Used</span>
+        <span>⚪ Cancelled</span>
+        <span>⚫ Expired</span>
+      </div>
+
+      <div class="seats-container">
+        <div *ngFor="let seat of seats" 
+             [ngClass]="getSeatClass(seat)"
+             (click)="selectSeat(seat)"
+             [attr.title]="seat.ownerName ? 'Owned by: ' + seat.ownerName : seat.label">
+          {{ getSeatColor(seat.state) }}
+          <br>
+          <small>{{ seat.label }}</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Form -->
+    <div class="booking-form">
+      <div class="selected-seat">
+        <p>
+          <strong>Selected Seat:</strong>
+          <span *ngIf="selectedSeat">{{ selectedSeat.label }}</span>
+          <span *ngIf="!selectedSeat" class="placeholder">None</span>
+        </p>
+      </div>
+
+      <input
+        [(ngModel)]="ownerName"
+        placeholder="Enter your name"
+        class="input-name"
+        type="text"
+      />
+
+      <button
+        (click)="buyTicket()"
+        [disabled]="loading || !selectedSeat || !ownerName"
+        class="btn-buy"
+      >
+        {{ loading ? 'Processing...' : '🎟️ Buy Ticket' }}
+      </button>
+    </div>
+  </div>
+</div>

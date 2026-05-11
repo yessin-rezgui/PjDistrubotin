@@ -1,5 +1,5 @@
-const db = require('../db');
 const crypto = require('crypto');
+const BlockchainLog = require('../models/BlockchainLog');
 
 class BlockchainService {
   calculateHash(index, timestamp, data, previousHash) {
@@ -9,34 +9,43 @@ class BlockchainService {
       .digest('hex');
   }
 
-  async logAction(ticketId, action, additionalData = {}, providedClient = null) {
-    const client = providedClient || await db.pool.connect();
-    try {
-      // Get last block for previousHash
-      const lastBlockRes = await client.query('SELECT id, hash FROM blockchain_logs ORDER BY id DESC LIMIT 1');
-      const previousHash = lastBlockRes.rows.length > 0 ? lastBlockRes.rows[0].hash : '0';
-      const index = lastBlockRes.rows.length > 0 ? lastBlockRes.rows[0].id + 1 : 0;
-      const timestamp = new Date().toISOString();
-      
-      const data = { ticketId, action, ...additionalData };
-      const hash = this.calculateHash(index, timestamp, data, previousHash);
+  async logAction(ticketId, action, additionalData = {}, session = null) {
+    const lastBlock = await BlockchainLog.findOne()
+      .sort({ index: -1 })
+      .session(session || undefined);
 
-      const result = await client.query(
-        'INSERT INTO blockchain_logs (ticket_id, action, timestamp, previous_hash, hash) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [ticketId, action, timestamp, previousHash, hash]
-      );
-      
-      return result.rows[0];
-    } finally {
-      if (!providedClient) {
-        client.release();
+    const previousHash = lastBlock ? lastBlock.hash : '0';
+    const index = lastBlock ? lastBlock.index + 1 : 0;
+    const timestamp = new Date();
+
+    const data = { ticketId, action, ...additionalData };
+    const hash = this.calculateHash(index, timestamp.toISOString(), data, previousHash);
+
+    const createOptions = session ? { session } : {};
+    const [block] = await BlockchainLog.create([
+      {
+        index,
+        ticketId,
+        action,
+        timestamp,
+        previousHash,
+        hash,
+        data
       }
-    }
+    ], createOptions);
+
+    return block;
   }
 
   async getChain() {
-    const result = await db.query('SELECT * FROM blockchain_logs ORDER BY id ASC');
-    return result.rows;
+    const blocks = await BlockchainLog.find().sort({ index: 1 }).lean();
+    return blocks.map((block) => ({
+      index: block.index,
+      hash: block.hash,
+      previous_hash: block.previousHash,
+      timestamp: block.timestamp,
+      data: block.data
+    }));
   }
 
   async validateChain() {

@@ -1,22 +1,31 @@
 const cron = require('node-cron');
 const TicketService = require('./TicketService');
+const logger = require('../utils/logger');
 
 class CronService {
-  init() {
+  init(io) {
     // Run every hour
     cron.schedule('0 * * * *', async () => {
-      console.log('Running ticket expiration cron job...');
+      logger.info('Running ticket expiration cron job...');
       try {
-        const expiredCount = await TicketService.expireTickets();
-        if (expiredCount > 0) {
-          console.log(`Expired ${expiredCount} tickets.`);
+        const expiredTickets = await TicketService.expireTickets();
+        if (expiredTickets.length > 0) {
+          logger.success(`Expired ${expiredTickets.length} tickets.`);
+          if (io) {
+            expiredTickets.forEach((ticket) => {
+              io.emit('ticketStateChanged', {
+                ...ticket,
+                status: 'EXPIRED'
+              });
+            });
+          }
         }
       } catch (err) {
-        console.error('Error in expiration cron job:', err);
+        logger.error('Error in expiration cron job', err);
       }
     });
     
-    console.log('Cron services initialized.');
+    logger.success('Cron services initialized.');
   }
 }
 

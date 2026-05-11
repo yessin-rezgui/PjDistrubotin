@@ -9,7 +9,8 @@ const auth = (role = null) => {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const jwtSecret = process.env.JWT_SECRET || 'dev_secret_change_me';
+      const decoded = jwt.verify(token, jwtSecret);
       req.user = decoded;
 
       if (role && req.user.role !== role) {

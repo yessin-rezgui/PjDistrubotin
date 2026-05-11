@@ -11,7 +11,7 @@
 
 ### 1. Clone Repository
 ```bash
-git clone <repository-url>
+git clone https://github.com/yessin-rezgui/PjDistrubotin.git
 cd concert-ticketing
 ```
 
@@ -56,7 +56,7 @@ docker-compose logs frontend
 Open Postman or Terminal and run:
 
 ```bash
-curl -X POST http://localhost:3000/concerts \
+curl -X POST http://localhost:3000/api/concerts \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Drake World Tour",
@@ -104,7 +104,7 @@ curl -X POST http://localhost:3000/concerts \
 
 ### Step 5: Check Blockchain
 ```bash
-curl http://localhost:3000/blockchain
+curl http://localhost:3000/api/blockchain
 ```
 
 Response will show all ticket transactions recorded on blockchain.
@@ -181,19 +181,19 @@ Content-Type: application/json
 
 #### Get All Concerts
 ```bash
-GET /concerts
+GET /api/concerts
 ```
 
 #### Get Concert by ID
 ```bash
-GET /concerts/{concertId}
+GET /api/concerts/{concertId}
 ```
 
 ### Tickets
 
 #### Get Seats for Concert
 ```bash
-GET /concerts/{concertId}/seats
+GET /api/concerts/{concertId}/seats
 ```
 
 Response shows seat grid with colors:
@@ -313,7 +313,7 @@ Response:
 
 ```bash
 # Terminal 1
-curl -X POST http://localhost:3000/tickets/buy \
+curl -X POST http://localhost:3000/api/tickets/buy \
   -H "Content-Type: application/json" \
   -d '{
     "concertId": "655f1234abcd5678",
@@ -322,7 +322,7 @@ curl -X POST http://localhost:3000/tickets/buy \
   }'
 
 # Terminal 2 (simultaneously or immediately after)
-curl -X POST http://localhost:3000/tickets/buy \
+curl -X POST http://localhost:3000/api/tickets/buy \
   -H "Content-Type: application/json" \
   -d '{
     "concertId": "655f1234abcd5678",
@@ -348,7 +348,7 @@ curl -X POST http://localhost:3000/tickets/buy \
 
 ```bash
 # Buy ticket
-curl -X POST http://localhost:3000/tickets/buy \
+curl -X POST http://localhost:3000/api/tickets/buy \
   -H "Content-Type: application/json" \
   -d '{
     "concertId": "{id}",
@@ -357,7 +357,7 @@ curl -X POST http://localhost:3000/tickets/buy \
   }'
 
 # Try to validate (might fail if current time is not within concert time)
-curl -X POST http://localhost:3000/tickets/validate \
+curl -X POST http://localhost:3000/api/tickets/validate \
   -H "Content-Type: application/json" \
   -d '{
     "concertId": "{id}",
@@ -374,15 +374,15 @@ curl -X POST http://localhost:3000/tickets/validate \
 
 ```bash
 # Get blockchain
-curl http://localhost:3000/blockchain | jq
+curl http://localhost:3000/api/blockchain | jq
 
 # Validate chain
-curl http://localhost:3000/blockchain/validate
+curl http://localhost:3000/api/blockchain/validate
 
 # Should return: "valid": true
 
 # Get statistics
-curl http://localhost:3000/blockchain/stats
+curl http://localhost:3000/api/blockchain/stats
 ```
 
 ---

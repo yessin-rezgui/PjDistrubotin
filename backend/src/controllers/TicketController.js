@@ -26,6 +26,12 @@ class TicketController {
       const result = await TicketService.validateTicket(ticketId);
       res.json({ success: true, ...result });
     } catch (err) {
+      if (err.message === 'Ticket expired' && req.io) {
+        req.io.emit('ticketStateChanged', {
+          ticketId: req.body.ticketId,
+          status: 'EXPIRED'
+        });
+      }
       res.status(400).json({ success: false, message: err.message });
     }
   }
@@ -45,6 +51,23 @@ class TicketController {
       const { ticketId } = req.params;
       const userId = req.user.id;
       const result = await TicketService.cancelTicket(ticketId, userId);
+
+      if (req.io && result.concertId && result.seatLabel) {
+        req.io.to(`concert-${result.concertId}`).emit('seatUpdated', {
+          concertId: result.concertId,
+          seatLabel: result.seatLabel,
+          status: 'AVAILABLE'
+        });
+
+        req.io.emit('ticketStateChanged', {
+          ticketId: result.ticketId,
+          userId: result.userId,
+          concertId: result.concertId,
+          seatLabel: result.seatLabel,
+          status: 'CANCELLED'
+        });
+      }
+
       res.json(result);
     } catch (err) {
       res.status(400).json({ success: false, message: err.message });

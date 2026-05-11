@@ -3,6 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const app = require('./app');
 const CronService = require('./services/CronService');
+const connectDB = require('./middleware/db');
+const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
@@ -19,21 +21,28 @@ const io = new Server(server, {
 app.set('io', io);
 
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+  logger.info(`Socket connected: ${socket.id}`);
 
   socket.on('joinConcert', (concertId) => {
     socket.join(`concert-${concertId}`);
-    console.log(`Socket ${socket.id} joined concert-${concertId}`);
+    logger.info(`Socket ${socket.id} joined concert-${concertId}`);
   });
 
   socket.on('disconnect', () => {
-    console.log('User disconnected');
+    logger.warn(`Socket disconnected: ${socket.id}`);
   });
 });
 
-// Initialize Cron Jobs
-CronService.init();
+const startServer = async () => {
+  await connectDB();
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  // Initialize Cron Jobs
+  CronService.init(io);
+
+  server.listen(PORT, () => {
+    logger.banner({ port: PORT, env: process.env.NODE_ENV || 'development', db: 'MongoDB' });
+    logger.success(`Server running on port ${PORT}`);
+  });
+};
+
+startServer();

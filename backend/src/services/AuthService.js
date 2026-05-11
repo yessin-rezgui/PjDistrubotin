@@ -1,26 +1,37 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db');
+const User = require('../models/User');
 
 class AuthService {
   async register(username, password, role = 'USER') {
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      throw new Error('Username already exists');
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const result = await db.query(
-      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id, username, role',
-      [username, hashedPassword, role]
-    );
+    const user = await User.create({
+      username,
+      password: hashedPassword,
+      role
+    });
 
-    const user = result.rows[0];
     const token = this.generateToken(user);
 
-    return { user, token };
+    return {
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        role: user.role
+      },
+      token
+    };
   }
 
   async login(username, password) {
-    const result = await db.query('SELECT * FROM users WHERE username = $1', [username]);
-    const user = result.rows[0];
+    const user = await User.findOne({ username });
 
     if (!user) {
       throw new Error('Invalid credentials');
@@ -32,15 +43,21 @@ class AuthService {
     }
 
     const token = this.generateToken(user);
-    const { password: _, ...userWithoutPassword } = user;
-
-    return { user: userWithoutPassword, token };
+    return {
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        role: user.role
+      },
+      token
+    };
   }
 
   generateToken(user) {
+    const jwtSecret = process.env.JWT_SECRET || 'dev_secret_change_me';
     return jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
+      { id: user._id.toString(), username: user.username, role: user.role },
+      jwtSecret,
       { expiresIn: '24h' }
     );
   }

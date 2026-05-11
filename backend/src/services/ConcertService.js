@@ -1,124 +1,218 @@
-const db = require('../db');
+const mongoose = require('mongoose');
+const Concert = require('../models/Concert');
+const Seat = require('../models/Seat');
+const Ticket = require('../models/Ticket');
+const User = require('../models/User');
+
+const TRANSACTION_NOT_SUPPORTED_REGEX = /Transaction numbers are only allowed|replica set|mongos|transaction.*not supported/i;
+
+const runWithTransaction = async (work) => {
+  const session = await mongoose.startSession();
+
+  try {
+    let result;
+
+    try {
+      await session.withTransaction(async () => {
+        result = await work(session);
+      });
+      return result;
+    } catch (err) {
+      if (err && TRANSACTION_NOT_SUPPORTED_REGEX.test(err.message || '')) {
+        return await work(null);
+      }
+      throw err;
+    }
+  } finally {
+    session.endSession();
+  }
+};
+
+const mapConcert = (concert) => ({
+  id: concert._id.toString(),
+  name: concert.name,
+  description: concert.description,
+  venue: concert.venue,
+  artist: concert.artist,
+  start_time: concert.startTime,
+  end_time: concert.endTime,
+  capacity: concert.capacity,
+  rows: concert.rows,
+  seatsPerRow: concert.seatsPerRow,
+  price: concert.price
+});
 
 class ConcertService {
   async createConcert(data) {
     const { name, description, venue, artist, startTime, endTime, capacity, rows, seatsPerRow, price } = data;
-    
-    const client = await db.pool.connect();
-    try {
-      await client.query('BEGIN');
-      
-      const concertResult = await client.query(
-        'INSERT INTO events (name, description, venue, artist, start_time, end_time, capacity, rows_count, seats_per_row, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-        [name, description, venue, artist, startTime, endTime, capacity, rows, seatsPerRow, price || 50.00]
-      );
-      
-      const concert = concertResult.rows[0];
-      
-      // Auto-generate seats
+    const totalSeats = capacity || rows * seatsPerRow;
+    const createdConcert = await runWithTransaction(async (session) => {
+      const createOptions = session ? { session } : {};
+      const concertDocs = await Concert.create([
+        {
+          name,
+          description: description || '',
+          venue,
+          artist,
+          startTime,
+          endTime,
+          capacity: totalSeats,
+          rows,
+          seatsPerRow,
+          price: price ?? 50
+        }
+      ], createOptions);
+
+      const concert = concertDocs[0];
       const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      const seats = [];
+
       for (let r = 0; r < rows; r++) {
-        const rowLabel = alphabet[r] || `R${r}`;
+        const rowLabel = alphabet[r] || `R${r + 1}`;
         for (let s = 1; s <= seatsPerRow; s++) {
           const seatLabel = `${rowLabel}${s}`;
-          await client.query(
-            'INSERT INTO seats (event_id, row_label, seat_number, seat_label) VALUES ($1, $2, $3, $4)',
-            [concert.id, rowLabel, s, seatLabel]
-          );
+          seats.push({
+            concertId: concert._id,
+            rowLabel,
+            seatNumber: s,
+            seatLabel,
+            status: 'AVAILABLE'
+          });
         }
       }
-      
-      await client.query('COMMIT');
+
+      if (seats.length) {
+        await Seat.insertMany(seats, createOptions);
+      }
+
       return concert;
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
-    }
+    });
+
+    return mapConcert(createdConcert);
   }
 
   async getAllConcerts() {
-    const result = await db.query('SELECT * FROM events ORDER BY start_time ASC');
-    return result.rows;
+    const concerts = await Concert.find().sort({ startTime: 1 }).lean();
+    return concerts.map((concert) => mapConcert(concert));
   }
 
   async getConcertById(id) {
-    const result = await db.query('SELECT * FROM events WHERE id = $1', [id]);
-    return result.rows[0];
+    const concert = await Concert.findById(id).lean();
+    return concert ? mapConcert(concert) : null;
   }
 
   async deleteConcert(id) {
-    await db.query('DELETE FROM events WHERE id = $1', [id]);
+    await runWithTransaction(async (session) => {
+      const deleteOptions = session ? { session } : {};
+
+      const concertQuery = Concert.findByIdAndDelete(id);
+      if (session) {
+        concertQuery.session(session);
+      }
+      await concertQuery;
+
+      await Seat.deleteMany({ concertId: id }, deleteOptions);
+      await Ticket.deleteMany({ concertId: id }, deleteOptions);
+    });
+
     return true;
   }
 
   async updateConcert(id, data) {
     const { name, description, venue, artist, startTime, endTime, price } = data;
-    const result = await db.query(
-      'UPDATE events SET name = $1, description = $2, venue = $3, artist = $4, start_time = $5, end_time = $6, price = $7 WHERE id = $8 RETURNING *',
-      [name, description, venue, artist, startTime, endTime, price || 50.00, id]
-    );
-    return result.rows[0];
+    const update = {
+      name,
+      description,
+      venue,
+      artist,
+      startTime,
+      endTime
+    };
+
+    if (price !== undefined) {
+      update.price = price;
+    }
+
+    const concert = await Concert.findByIdAndUpdate(id, update, { new: true }).lean();
+
+    return concert ? mapConcert(concert) : null;
   }
 
   async getDashboardStats() {
-    const totalEvents = await db.query('SELECT COUNT(*) FROM events');
-    const totalTicketsSold = await db.query("SELECT COUNT(*) FROM tickets WHERE status = 'VALID' OR status = 'USED'");
-    const totalUsers = await db.query("SELECT COUNT(*) FROM users WHERE role = 'USER'");
-    
-    // Calculate total revenue
-    const revenueResult = await db.query(`
-      SELECT SUM(e.price) as total_revenue
-      FROM tickets t
-      JOIN seats s ON t.seat_id = s.id
-      JOIN events e ON s.event_id = e.id
-      WHERE t.status IN ('VALID', 'USED')
-    `);
+    const totalEvents = await Concert.countDocuments();
+    const totalTicketsSold = await Ticket.countDocuments({
+      status: { $in: ['VALID', 'USED'] }
+    });
+    const totalUsers = await User.countDocuments({ role: 'USER' });
 
-    // Ticket status distribution
-    const statusStats = await db.query(`
-      SELECT status, COUNT(*) as count 
-      FROM tickets 
-      GROUP BY status
-    `);
+    const revenueAgg = await Ticket.aggregate([
+      { $match: { status: { $in: ['VALID', 'USED'] } } },
+      { $group: { _id: null, total: { $sum: '$price' } } }
+    ]);
 
-    // Sales over the last 7 days
-    const salesOverTime = await db.query(`
-      SELECT DATE(purchase_time) as date, COUNT(*) as count
-      FROM tickets
-      WHERE purchase_time > CURRENT_DATE - INTERVAL '7 days'
-      GROUP BY DATE(purchase_time)
-      ORDER BY DATE(purchase_time) ASC
-    `);
+    const statusStats = await Ticket.aggregate([
+      { $group: { _id: '$status', count: { $sum: 1 } } },
+      { $project: { _id: 0, status: '$_id', count: 1 } }
+    ]);
 
-    const recentTickets = await db.query(`
-      SELECT t.*, e.name as event_name, u.username as owner_name, s.seat_label
-      FROM tickets t 
-      JOIN seats s ON t.seat_id = s.id 
-      JOIN events e ON s.event_id = e.id 
-      LEFT JOIN users u ON t.user_id = u.id
-      ORDER BY t.purchase_time DESC 
-      LIMIT 10
-    `);
-    
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const salesOverTime = await Ticket.aggregate([
+      { $match: { purchaseTime: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: '%Y-%m-%d',
+              date: '$purchaseTime'
+            }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } },
+      { $project: { _id: 0, date: '$_id', count: 1 } }
+    ]);
+
+    const recentTicketsRaw = await Ticket.find()
+      .sort({ purchaseTime: -1 })
+      .limit(10)
+      .lean();
+
+    const recentTickets = recentTicketsRaw.map((ticket) => ({
+      id: ticket._id.toString(),
+      status: ticket.status,
+      purchase_time: ticket.purchaseTime,
+      event_name: ticket.concertName,
+      user_name: ticket.userName,
+      owner_name: ticket.userName,
+      seat_label: ticket.seatLabel
+    }));
+
     return {
-      totalEvents: parseInt(totalEvents.rows[0].count),
-      totalTicketsSold: parseInt(totalTicketsSold.rows[0].count),
-      totalUsers: parseInt(totalUsers.rows[0].count),
-      totalRevenue: parseFloat(revenueResult.rows[0].total_revenue || 0),
-      statusStats: statusStats.rows,
-      salesOverTime: salesOverTime.rows,
-      recentTickets: recentTickets.rows
+      totalEvents,
+      totalTicketsSold,
+      totalUsers,
+      totalRevenue: revenueAgg[0]?.total || 0,
+      statusStats,
+      salesOverTime,
+      recentTickets
     };
   }
 
   async getSeats(concertId) {
-    const result = await db.query(
-      'SELECT s.*, t.status as ticket_status, t.user_name as owner_name FROM seats s LEFT JOIN tickets t ON s.id = t.seat_id WHERE s.event_id = $1 ORDER BY s.row_label, s.seat_number',
-      [concertId]
-    );
-    return result.rows;
+    const seats = await Seat.find({ concertId })
+      .sort({ rowLabel: 1, seatNumber: 1 })
+      .lean();
+
+    return seats.map((seat) => ({
+      id: seat._id.toString(),
+      row_label: seat.rowLabel,
+      seat_number: seat.seatNumber,
+      seat_label: seat.seatLabel,
+      status: seat.status,
+      ticket_status: seat.status === 'SOLD' ? 'SOLD' : null,
+      owner_name: seat.ownerName || null
+    }));
   }
 }
 

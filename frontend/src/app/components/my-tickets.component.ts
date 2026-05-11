@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../services/auth.service';
 import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
+import { WebSocketService } from '../services/websocket.service';
 
 @Component({
   selector: 'app-my-tickets',
@@ -70,13 +71,29 @@ import { TicketDetailsComponent } from './ticket-details/ticket-details.componen
     }
   `]
 })
-export class MyTicketsComponent implements OnInit {
+export class MyTicketsComponent implements OnInit, OnDestroy {
   tickets: any[] = [];
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+    private socketService: WebSocketService
+  ) {}
 
   ngOnInit() {
     this.loadTickets();
+    this.socketService.setupSocket();
+    this.socketService.onTicketStateChanged((data: any) => {
+      if (!data?.ticketId) return;
+      const ticket = this.tickets.find((item) => item.id === data.ticketId);
+      if (ticket) {
+        ticket.status = data.status || ticket.status;
+      }
+    });
+  }
+
+  ngOnDestroy() {
+    this.socketService.disconnect();
   }
 
   loadTickets() {

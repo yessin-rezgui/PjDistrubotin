@@ -1,11 +1,10 @@
 const mongoose = require('mongoose');
 
-const TICKET_STATES = {
-  AVAILABLE: 'AVAILABLE',
-  SOLD: 'SOLD',
+const TICKET_STATUS = {
+  VALID: 'VALID',
   USED: 'USED',
   CANCELLED: 'CANCELLED',
-  EXPIRED: 'EXPIRED',
+  EXPIRED: 'EXPIRED'
 };
 
 const ticketSchema = new mongoose.Schema(
@@ -14,69 +13,89 @@ const ticketSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Concert',
       required: true,
-      index: true,
+      index: true
     },
-    seatRow: {
-      type: String,
+    seatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Seat',
       required: true,
-    },
-    seatNumber: {
-      type: Number,
-      required: true,
+      index: true
     },
     seatLabel: {
       type: String,
       required: true,
-      index: true,
-      unique: true,
+      index: true
     },
-    ownerName: {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true
+    },
+    userName: {
       type: String,
-      default: null,
+      default: null
     },
-    state: {
+    status: {
       type: String,
-      enum: Object.values(TICKET_STATES),
-      default: TICKET_STATES.AVAILABLE,
-      index: true,
+      enum: Object.values(TICKET_STATUS),
+      default: TICKET_STATUS.VALID,
+      index: true
     },
-    purchasedAt: {
+    qrCode: {
+      type: String,
+      default: null
+    },
+    purchaseTime: {
       type: Date,
-      default: null,
+      default: Date.now
     },
     usedAt: {
       type: Date,
-      default: null,
+      default: null
     },
     cancelledAt: {
       type: Date,
-      default: null,
+      default: null
     },
     expiresAt: {
       type: Date,
-      default: null,
-    },
-    transactionId: {
-      type: String,
-      default: null,
+      default: null
     },
     blockchainHash: {
       type: String,
       default: null,
-      index: true,
+      index: true
     },
-    createdAt: {
+    price: {
+      type: Number,
+      default: 0
+    },
+    concertName: {
+      type: String,
+      default: ''
+    },
+    artist: {
+      type: String,
+      default: ''
+    },
+    venue: {
+      type: String,
+      default: ''
+    },
+    concertStartTime: {
       type: Date,
-      default: Date.now,
+      default: null
     },
+    concertEndTime: {
+      type: Date,
+      default: null
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
-// Compound unique index for concert + seat
-ticketSchema.index({ concertId: 1, seatRow: 1, seatNumber: 1 }, { unique: true });
-
 module.exports = mongoose.model('Ticket', ticketSchema);
-module.exports.TICKET_STATES = TICKET_STATES;
+module.exports.TICKET_STATUS = TICKET_STATUS;

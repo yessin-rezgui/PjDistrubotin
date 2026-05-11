@@ -175,7 +175,47 @@ declare var Chart: any;
                 <span>{{ isChainValid ? 'Chain Verified' : 'Security Warning' }}</span>
               </div>
             </div>
+            <div class="ledger-metrics">
+              <div class="ledger-metric primary">
+                <span class="label">Total Blocks</span>
+                <span class="value">{{ blockchainSummary.totalBlocks }}</span>
+                <span class="meta">Last hash {{ blockchainSummary.lastHash | slice:0:12 }}...</span>
+              </div>
+              <div class="ledger-metric">
+                <span class="label">Last Action</span>
+                <span class="value">{{ blockchainSummary.lastAction }}</span>
+                <span class="meta">{{ blockchainSummary.lastTimestamp | date:'short' }}</span>
+              </div>
+              <div class="ledger-metric accent">
+                <span class="label">Integrity</span>
+                <span class="value">{{ isChainValid ? 'Verified' : 'Check' }}</span>
+                <span class="meta">{{ isChainValid ? 'All links match' : 'Audit required' }}</span>
+              </div>
+            </div>
+            <div class="ledger-charts">
+              <div class="ledger-chart-card">
+                <div class="chart-head">
+                  <h4>Block Activity</h4>
+                  <span>Daily additions</span>
+                </div>
+                <div class="chart-container compact">
+                  <canvas #ledgerTimelineChart></canvas>
+                </div>
+              </div>
+              <div class="ledger-chart-card">
+                <div class="chart-head">
+                  <h4>Action Breakdown</h4>
+                  <span>Distribution by type</span>
+                </div>
+                <div class="chart-container compact">
+                  <canvas #ledgerActionChart></canvas>
+                </div>
+              </div>
+            </div>
             <div class="blocks-timeline">
+              <div *ngIf="!blockchain.length" class="ledger-empty">
+                No blockchain entries yet. Sell or validate a ticket to create the first block.
+              </div>
               <div *ngFor="let block of blockchain" class="timeline-block">
                 <div class="block-point"></div>
                 <div class="block-content">
@@ -339,9 +379,10 @@ declare var Chart: any;
     </div>
   `,
   styles: [`
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
     :host { --primary: #6366f1; --primary-hover: #4f46e5; --bg: #f8fafc; --sidebar: #0f172a; --text-main: #1e293b; --text-muted: #64748b; --border: #e2e8f0; --white: #ffffff; }
 
-    .admin-layout { display: flex; height: 100vh; background: var(--bg); color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; }
+    .admin-layout { display: flex; height: 100vh; background: var(--bg); color: var(--text-main); font-family: 'Space Grotesk', sans-serif; overflow: hidden; }
     
     /* Sidebar */
     .sidebar { width: 280px; background: var(--sidebar); color: #94a3b8; display: flex; flex-direction: column; z-index: 100; box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
@@ -434,11 +475,28 @@ declare var Chart: any;
     .icon-btn.delete { color: #ef4444; }
 
     /* Blockchain View */
-    .blockchain-container { max-width: 900px; margin: 0 auto; }
-    .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; background: white; padding: 30px; border-radius: 24px; border: 1px solid var(--border); }
+    .blockchain-container { max-width: 1050px; margin: 0 auto; }
+    .ledger-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; background: white; padding: 30px; border-radius: 24px; border: 1px solid var(--border); }
     .ledger-status { display: flex; align-items: center; gap: 12px; padding: 10px 20px; border-radius: 100px; background: #fee2e2; color: #b91c1c; font-weight: 700; }
     .ledger-status.valid { background: #dcfce7; color: #15803d; }
     .status-icon { width: 12px; height: 12px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+
+    .ledger-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 24px; }
+    .ledger-metric { background: white; padding: 20px; border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); }
+    .ledger-metric.primary { background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(14,165,233,0.08)); border-color: rgba(99,102,241,0.2); }
+    .ledger-metric.accent { background: linear-gradient(135deg, rgba(34,197,94,0.14), rgba(16,185,129,0.08)); border-color: rgba(34,197,94,0.2); }
+    .ledger-metric .label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .ledger-metric .value { display: block; font-size: 22px; font-weight: 800; margin: 8px 0; color: #0f172a; }
+    .ledger-metric .meta { font-size: 12px; color: var(--text-muted); }
+
+    .ledger-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .ledger-chart-card { background: white; border-radius: 20px; border: 1px solid var(--border); padding: 20px; box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06); }
+    .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+    .chart-head h4 { margin: 0; font-size: 16px; font-weight: 800; }
+    .chart-head span { font-size: 12px; color: var(--text-muted); }
+    .chart-container.compact { height: 220px; }
+
+    .ledger-empty { padding: 18px 24px; border-radius: 16px; border: 1px dashed var(--border); color: var(--text-muted); background: #f8fafc; font-weight: 600; }
     
     .blocks-timeline { display: flex; flex-direction: column; gap: 20px; }
     .timeline-block { display: flex; gap: 30px; position: relative; }
@@ -492,6 +550,8 @@ declare var Chart: any;
 export class AdminDashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('salesChart') salesChartCanvas!: ElementRef;
   @ViewChild('distributionChart') distributionChartCanvas!: ElementRef;
+  @ViewChild('ledgerTimelineChart') ledgerTimelineChartCanvas!: ElementRef;
+  @ViewChild('ledgerActionChart') ledgerActionChartCanvas!: ElementRef;
 
   activeTab: 'stats' | 'events' | 'blockchain' | 'create' | 'edit' = 'stats';
   events: any[] = [];
@@ -505,6 +565,14 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   
   salesChart: any;
   distributionChart: any;
+  ledgerTimelineChart: any;
+  ledgerActionChart: any;
+  blockchainSummary = {
+    totalBlocks: 0,
+    lastAction: '-',
+    lastTimestamp: null,
+    lastHash: '-'
+  };
 
   newEvent = {
     name: '', artist: '', venue: '', description: '', price: 50,
@@ -623,10 +691,110 @@ export class AdminDashboardComponent implements OnInit, AfterViewInit {
   loadBlockchain() {
     this.http.get<any>(`${environment.apiUrl}/blockchain`).subscribe(res => {
       this.blockchain = res.data.reverse();
+      this.updateBlockchainSummary();
+      setTimeout(() => this.initBlockchainCharts(), 100);
     });
     this.http.get<any>(`${environment.apiUrl}/blockchain/validate`).subscribe(res => {
       this.isChainValid = res.valid;
     });
+  }
+
+  updateBlockchainSummary() {
+    const latest = this.blockchain[0];
+    this.blockchainSummary = {
+      totalBlocks: this.blockchain.length,
+      lastAction: latest?.data?.action || '-',
+      lastTimestamp: latest?.timestamp || null,
+      lastHash: latest?.hash || '-'
+    };
+  }
+
+  initBlockchainCharts() {
+    if (this.ledgerTimelineChart) this.ledgerTimelineChart.destroy();
+    if (this.ledgerActionChart) this.ledgerActionChart.destroy();
+
+    const timelineCtx = this.ledgerTimelineChartCanvas?.nativeElement.getContext('2d');
+    if (timelineCtx) {
+      const orderedBlocks = [...this.blockchain].reverse();
+      const buckets: Record<string, number> = {};
+      orderedBlocks.forEach((block: any) => {
+        const date = new Date(block.timestamp);
+        if (Number.isNaN(date.getTime())) return;
+        const key = date.toISOString().slice(0, 10);
+        buckets[key] = (buckets[key] || 0) + 1;
+      });
+
+      let labels = Object.keys(buckets);
+      let values = labels.map((label) => buckets[label]);
+
+      if (!labels.length) {
+        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        values = [0, 0, 0, 0, 0, 0, 0];
+      } else {
+        labels = labels.map((label) => new Date(label).toLocaleDateString());
+      }
+
+      this.ledgerTimelineChart = new Chart(timelineCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Blocks',
+            data: values,
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99, 102, 241, 0.12)',
+            tension: 0.35,
+            fill: true,
+            pointBackgroundColor: '#6366f1'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    const actionCtx = this.ledgerActionChartCanvas?.nativeElement.getContext('2d');
+    if (actionCtx) {
+      const actionCounts: Record<string, number> = {};
+      this.blockchain.forEach((block: any) => {
+        const action = block?.data?.action || 'UNKNOWN';
+        actionCounts[action] = (actionCounts[action] || 0) + 1;
+      });
+
+      const labels = Object.keys(actionCounts);
+      const data = labels.map((label) => actionCounts[label]);
+      const chartLabels = labels.length ? labels : ['SOLD', 'USED', 'CANCELLED'];
+      const chartData = data.length ? data : [0, 0, 0];
+
+      this.ledgerActionChart = new Chart(actionCtx, {
+        type: 'bar',
+        data: {
+          labels: chartLabels,
+          datasets: [{
+            data: chartData,
+            backgroundColor: ['#6366f1', '#0ea5e9', '#f97316', '#22c55e'],
+            borderRadius: 8,
+            maxBarThickness: 48
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
   }
 
   viewSeats(event: any) {

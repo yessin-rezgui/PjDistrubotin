@@ -5,46 +5,53 @@ const concertSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
-      trim: true,
+      trim: true
+    },
+    description: {
+      type: String,
+      default: ''
     },
     artist: {
       type: String,
       required: true,
-      trim: true,
+      trim: true
     },
     venue: {
       type: String,
       required: true,
-      trim: true,
+      trim: true
     },
     startTime: {
       type: Date,
-      required: true,
+      required: true
     },
     endTime: {
       type: Date,
-      required: true,
+      required: true
     },
-    totalSeats: {
+    capacity: {
       type: Number,
       required: true,
-      min: 1,
+      min: 1
     },
     rows: {
       type: Number,
-      default: 10,
+      required: true,
+      min: 1
     },
     seatsPerRow: {
       type: Number,
-      default: 10,
+      required: true,
+      min: 1
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
+    price: {
+      type: Number,
+      default: 50,
+      min: 0
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 

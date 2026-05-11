@@ -7,9 +7,9 @@ class BlockchainController {
   /**
    * GET /blockchain - Get entire blockchain
    */
-  static getBlockchain(req, res) {
+  static async getBlockchain(req, res) {
     try {
-      const blockchain = BlockchainService.getBlockchain();
+      const blockchain = await BlockchainService.getChain();
       res.json({
         success: true,
         data: blockchain,
@@ -24,9 +24,9 @@ class BlockchainController {
   /**
    * GET /blockchain/validate - Validate blockchain integrity
    */
-  static validateBlockchain(req, res) {
+  static async validateBlockchain(req, res) {
     try {
-      const validation = BlockchainService.validateBlockchain();
+      const validation = await BlockchainService.validateChain();
       res.json({
         success: true,
         data: validation,
@@ -41,9 +41,13 @@ class BlockchainController {
   /**
    * GET /blockchain/stats - Get blockchain statistics
    */
-  static getBlockchainStats(req, res) {
+  static async getBlockchainStats(req, res) {
     try {
-      const stats = BlockchainService.getBlockchainStats();
+      const chain = await BlockchainService.getChain();
+      const stats = {
+        blocks: chain.length,
+        lastHash: chain.length ? chain[chain.length - 1].hash : null
+      };
       res.json({
         success: true,
         data: stats,

@@ -1,21 +1,16 @@
 services:
-  # PostgreSQL Database
-  db:
-    image: postgres:15-alpine
-    container_name: concert-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: SytemDS
+  # MongoDB Database
+  mongo:
+    image: mongo:7
+    container_name: concert-mongo
     ports:
-      - '5432:5432'
+      - '27017:27017'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - mongo_data:/data/db
     networks:
       - concert-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d SytemDS"]
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 }).ok"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -28,13 +23,13 @@ services:
     container_name: concert-backend
     environment:
       PORT: 3000
-      DATABASE_URL: postgres://postgres:postgres@db:5432/SytemDS
+      MONGODB_URI: mongodb://mongo:27017/concert-ticketing
       JWT_SECRET: your_super_secret_jwt_key
       NODE_ENV: development
     ports:
       - '3000:3000'
     depends_on:
-      db:
+      mongo:
         condition: service_healthy
     networks:
       - concert-network
@@ -59,7 +54,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mongo_data:
 
 networks:
   concert-network:
